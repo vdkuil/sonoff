@@ -19,9 +19,8 @@ if (!args['e'] || !args['p']) {
   return;
 }
 console.log('email', args['e']);
-console.log('password', args['p']);
 console.log('region', args['r']);
-console.log('port', args['o']);
+console.log('runing port', args['o']);
 
 const connection = new ewelink({
       email: args['e'],
@@ -64,11 +63,6 @@ const port = args['o'];
      }
   });
 
-  app.get('/dummy', function (req, res) {
-     res.writeHead(200, {'Content-Type': 'application/json;utf-8', 'x-action':'dummy'});
-     console.log("dummy call "+req.query.id);
-     res.end( '{"test":"Test message'+req.query.id+'"}');
-  });
   app.get('/toggle', function (req, res) {
      var device = findDevice(req.query);
      if (device) {
@@ -85,6 +79,6 @@ const port = args['o'];
   var server = app.listen(port, function () {
   	   var host = server.address().address
   	   var port = server.address().port
-  	   console.log("ewe app listening at http://%s:%s", host, port)
+  	   console.log("ewe server listening at http://%s:%s", host, port)
   })
 })();
