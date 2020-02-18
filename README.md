@@ -18,3 +18,8 @@ The parameters -r and -o are optional
 
 ### Installation
 copy plugin/plugin.py  to domotiz/plugins/SonOff/plugin.py
+
+You have to make sure you have python3 (and python3-dev) installed on your domoticz system. Usually this can be done with
+```bash
+apt-get install python3-dev
+```
