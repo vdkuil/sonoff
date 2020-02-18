@@ -10,7 +10,7 @@ npm install express
 npm install minimist
 ```
 ### Running
-node server.js -e <email> -p <password> -r us -o 8081
+node server.js -e `email` -p `password` -r us -o 8081
 The parameters -r and -o are optional
 
 
