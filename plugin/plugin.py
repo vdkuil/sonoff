@@ -112,7 +112,7 @@ class BasePlugin:
         else:
             Domoticz.Log("onCommand NOT connected");
             self.sendData = { 'Verb' : 'GET',
-                         'URL'  : '/dummy?id=' + Devices[Unit].DeviceID,
+                         'URL'  : '/toggle?id=' + Devices[Unit].DeviceID,
                          'Headers' : { 'Content-Type': 'application/json; charset=utf-8', \
                                        'Connection': 'keep-alive', \
                                        'Accept': 'Content-Type: application/json; charset=UTF-8', \
