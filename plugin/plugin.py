@@ -1,6 +1,6 @@
 # SonOff Plugin
 #
-# Author: GizMoCuz
+# Author: vdkuil
 #
 """
 <plugin key="BasePlug" name="SonOff Plugin" author="Roy van der Kuil" version="1.0.0" wikilink="http://www.domoticz.com/wiki/plugins/plugin.html" externallink="https://github.com/vdkuil/sonoff">
