@@ -18,7 +18,6 @@ import json
 
 class BasePlugin:
     #enabled = False
-    deleted = True
     httpConn = None
     sendData = None
     runAgain = 6
@@ -60,22 +59,27 @@ class BasePlugin:
     def onMessage(self, Connection, Data):
         Domoticz.Log("onMessage called")
         strData = Data["Data"].decode("utf-8", "ignore")
-        json_data = json.loads(strData);
+        json_data = json.loads(strData)
         json_headers = Data["Headers"]
         Status = int(Data["Status"])
         #LogMessage(strData)
         #Domoticz.Log("Received data ("+strData+"), Name: " + json_data[0]['name'] + ", Devices: ("+str(len(Devices))+"), Connection: "+json_headers['x-action']);
         Domoticz.Log("Received data ("+strData+"), Devices: ("+str(len(Devices))+"), Connection: "+json_headers['x-action']);
         if (json_headers['x-action'] == 'list'):
-            if (self.deleted == False):
-                self.deleted = True;
-                for x in Devices:
-                    Domoticz.Log("Device:           " + str(x) + " - " + str(Devices[x]))
-                    Devices[x].Delete();
-            if (len(Devices) == 0):
-                for sonoff_device in json_data:
-                    Domoticz.Log("Creating device (Name="+sonoff_device['name']+", TypeName=Light/Switch");
-                    myDevice = Domoticz.Device(Name=sonoff_device['name'], Unit=1, Type=244, Subtype=62, Switchtype=0, Image=0, Options={}, Used=1, DeviceID=sonoff_device['deviceid']).Create();
+            for sonoff_device in json_data:
+                deviceId = sonoff_device['deviceid']
+                device = [x for x in Devices if Devices[x].DeviceID == deviceId]
+                if (len(device) == 0):
+                    unitNr = nextUnitNr();
+                    type = sonoff_device['type']
+                    Domoticz.Log("Device not found " + deviceId + ", trying to create a new one " + type + " with id " + str(unitNr));
+                    if (type == "10"):
+                        myDevice = Domoticz.Device(Name=sonoff_device['name'], Unit=unitNr, Type=244, Subtype=62, Switchtype=0, Image=0, Options={}, Used=1, DeviceID=sonoff_device['deviceid']).Create();
+                else:
+                    Domoticz.Log("Found existing device " + deviceId);
+
+                #    Domoticz.Log("Creating device (Name="+sonoff_device['name']+", TypeName=Light/Switch");
+                #    myDevice = Domoticz.Device(Name=sonoff_device['name'], Unit=1, Type=244, Subtype=62, Switchtype=0, Image=0, Options={}, Used=1, DeviceID=sonoff_device['deviceid']).Create();
         else:
             Domoticz.Log("Unsupported action found "+json_headers['x-action']);
 
@@ -186,6 +190,12 @@ def onDisconnect(Connection):
 def onHeartbeat():
     global _plugin
     _plugin.onHeartbeat()
+
+def nextUnitNr():
+    unitNr = 1
+    while unitNr in Devices:
+        unitNr = unitNr + 1;
+    return unitNr
 
     # Generic helper functions
 def DumpConfigToLog():
