@@ -63,13 +63,71 @@ const port = args['o'];
      }
   });
 
-  app.get('/toggle', function (req, res) {
+  app.get('/powerusage', async (req, res) => {
      var device = findDevice(req.query);
      if (device) {
-       res.writeHead(200, {'Content-Type': 'application/json;utf-8', 'x-action':'toggle'});
-       const status = connection.toggleDevice(device.deviceid);
-       res.end( JSON.stringify(status));
+       console.log("Request power usage for device %s", device.deviceid);
+       res.writeHead(200, {'Content-Type': 'application/json;utf-8', 'x-action':'powerusage'});
+       const usage = await connection.getDevicePowerUsage(device.deviceid);
+       res.end( JSON.stringify(usage));
      } else {
+       console.log("Togge device unknown device");
+       res.writeHead(400, {'Content-Type': 'application/json;utf-8'});
+       res.end( '{"error":"Missing id or name parameter"}');
+     }
+  });
+  
+  app.get('/currentth', async (req, res) => {
+     var device = findDevice(req.query);
+     if (device) {
+       console.log("Request temp-humidity usage for device %s", device.deviceid);
+       res.writeHead(200, {'Content-Type': 'application/json;utf-8', 'x-action':'currentth'});
+       const usage = await connection.getDeviceCurrentTH(device.deviceid);
+       res.end( JSON.stringify(usage));
+     } else {
+       console.log("Togge device unknown device");
+       res.writeHead(400, {'Content-Type': 'application/json;utf-8'});
+       res.end( '{"error":"Missing id or name parameter"}');
+     }
+  });
+  
+  app.get('/currenttemp', async (req, res) => {
+     var device = findDevice(req.query);
+     if (device) {
+       console.log("Request temp usage for device %s", device.deviceid);
+       res.writeHead(200, {'Content-Type': 'application/json;utf-8', 'x-action':'currenttemp'});
+       const usage = await connection.getDeviceCurrentTemperature(device.deviceid);
+       res.end( JSON.stringify(usage));
+     } else {
+       console.log("Togge device unknown device");
+       res.writeHead(400, {'Content-Type': 'application/json;utf-8'});
+       res.end( '{"error":"Missing id or name parameter"}');
+     }
+  });
+  
+  app.get('/currenthumidity', async (req, res) => {
+     var device = findDevice(req.query);
+     if (device) {
+       console.log("Request humidity usage for device %s", device.deviceid);
+       res.writeHead(200, {'Content-Type': 'application/json;utf-8', 'x-action':'currenthumidity'});
+       const usage = await connection.getDeviceCurrentHumidity(device.deviceid);
+       res.end( JSON.stringify(usage));
+     } else {
+       console.log("Togge device unknown device");
+       res.writeHead(400, {'Content-Type': 'application/json;utf-8'});
+       res.end( '{"error":"Missing id or name parameter"}');
+     }
+  });
+
+  app.get('/toggle', async (req, res) => {
+     var device = findDevice(req.query);
+     if (device) {
+       console.log("Togge device %s", device.deviceid);
+       res.writeHead(200, {'Content-Type': 'application/json;utf-8', 'x-action':'toggle'});
+       const deviceStatus = await connection.toggleDevice(device.deviceid);
+       res.end( JSON.stringify(deviceStatus));
+     } else {
+       console.log("Togge device unknown device");
        res.writeHead(400, {'Content-Type': 'application/json;utf-8'});
        res.end( '{"error":"Missing id or name parameter"}');
      }
