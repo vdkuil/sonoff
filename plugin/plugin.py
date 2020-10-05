@@ -115,14 +115,35 @@ class BasePlugin:
             Domoticz.Log("onCommand connected");
         else:
             Domoticz.Log("onCommand NOT connected");
-            self.sendData = { 'Verb' : 'GET',
-                         'URL'  : '/toggle?id=' + Devices[Unit].DeviceID,
-                         'Headers' : { 'Content-Type': 'application/json; charset=utf-8', \
-                                       'Connection': 'keep-alive', \
-                                       'Accept': 'Content-Type: application/json; charset=UTF-8', \
-                                       'Host': Parameters["Address"]+":"+Parameters["Port"], \
-                                       'User-Agent':'Domoticz/1.0' }
-                       }
+            if(str(Command) == 'On'):
+                self.sendData = { 'Verb' : 'GET',
+                    'URL'  : '/on?id=' + Devices[Unit].DeviceID,
+                    'Headers' : { 'Content-Type': 'application/json; charset=utf-8', \
+                        'Connection': 'keep-alive', \
+                        'Accept': 'Content-Type: application/json; charset=UTF-8', \
+                        'Host': Parameters["Address"]+":"+Parameters["Port"], \
+                        'User-Agent':'Domoticz/1.0' }
+                    }
+                Devices[Unit].Update(nValue=1, sValue=Devices[Unit].sValue);
+            elif(str(Command) == 'Off'):
+                self.sendData = { 'Verb' : 'GET',
+                    'URL'  : '/off?id=' + Devices[Unit].DeviceID,
+                    'Headers' : { 'Content-Type': 'application/json; charset=utf-8', \
+                        'Connection': 'keep-alive', \
+                	    'Accept': 'Content-Type: application/json; charset=UTF-8', \
+                        'Host': Parameters["Address"]+":"+Parameters["Port"], \
+                        'User-Agent':'Domoticz/1.0' }
+                    }
+                Devices[Unit].Update(nValue=0, sValue=Devices[Unit].sValue);
+            else:
+                self.sendData = { 'Verb' : 'GET',
+                    'URL'  : '/toggle?id=' + Devices[Unit].DeviceID,
+                    'Headers' : { 'Content-Type': 'application/json; charset=utf-8', \
+                	        'Connection': 'keep-alive', \
+                	        'Accept': 'Content-Type: application/json; charset=UTF-8', \
+                	        'Host': Parameters["Address"]+":"+Parameters["Port"], \
+                	        'User-Agent':'Domoticz/1.0' }
+                    }
             self.httpConn = Domoticz.Connection(Name="SonOff EWELink connection", Transport="TCP/IP", Protocol=self.sProtocol, Address=Parameters["Address"], Port=Parameters["Port"])
             self.httpConn.Connect()
         #Connection.Send(sendData)
