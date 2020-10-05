@@ -75,6 +75,29 @@ const port = args['o'];
      }
   });
   
+  app.get('/on', function (req, res) {
+     var device = findDevice(req.query);
+     if (device) {
+       res.writeHead(200, {'Content-Type': 'application/json;utf-8', 'x-action':'on'});
+       const status = connection.setDevicePowerState(device.deviceid, 'on');
+       res.end( JSON.stringify(status));
+     } else {
+       res.writeHead(400, {'Content-Type': 'application/json;utf-8'});
+       res.end( '{"error":"Missing id or name parameter"}');
+     }
+  });
+  
+  app.get('/off', function (req, res) {
+     var device = findDevice(req.query);
+     if (device) {
+       res.writeHead(200, {'Content-Type': 'application/json;utf-8', 'x-action':'off'});
+       const status = connection.setDevicePowerState(device.deviceid, 'off');
+       res.end( JSON.stringify(status));
+     } else {
+       res.writeHead(400, {'Content-Type': 'application/json;utf-8'});
+       res.end( '{"error":"Missing id or name parameter"}');
+     }
+  });
   
   var server = app.listen(port, function () {
   	   var host = server.address().address
