@@ -136,18 +136,6 @@ const port = args['o'];
   });
 
   app.get('/toggle', async (req, res) => {
-     var device = findDevice(req.query);
-     if (device) {
-       console.log("Togge device %s", device.deviceid);
-       res.writeHead(200, {'Content-Type': 'application/json;utf-8', 'x-action':'toggle'});
-       const deviceStatus = await connection.toggleDevice(device.deviceid);
-       res.end( JSON.stringify(deviceStatus));
-     } else {
-       console.log("Togge device unknown device");
-       res.writeHead(400, {'Content-Type': 'application/json;utf-8'});
-       res.end( '{"error":"Missing id or name parameter"}');
-     }
-  app.get('/toggle', async (req, res) => {
 	var funciono = true;
 	var device = findDevice(req.query);
 	if (device) {
