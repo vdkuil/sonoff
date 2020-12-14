@@ -1,5 +1,5 @@
 var express = require('express');
-var ewelink = require('ewelink-api');
+const ewelink = require('ewelink-api');
 var minimist = require('minimist');
 var app = express();
 
@@ -45,22 +45,38 @@ const port = args['o'];
        }
        return null;
   }
+
+  app.get('/list', async (req, res) => {
+	var funciono = true;
+	res.writeHead(200, {'Content-Type': 'application/json;utf-8', 'x-action':'list'});
+	while (funciono) {
+		try {
+			const devices = await connection.getDevices();
+			res.end( JSON.stringify(devices));
+			/*console.log(devices);	*/
+			var funciono = false;
+		} catch (error) {
+			console.log(error)
+		}			
+	}
+  });
   
-  app.get('/list', function (req, res) {
-       res.writeHead(200, {'Content-Type': 'application/json;utf-8', 'x-action':'list'});
-       //res.end( '{"id":'+devices[0].deviceid+'"}' );
-       res.end( JSON.stringify(devices));
-     });
-  
-  app.get('/status', function (req, res) {
-     var device = findDevice(req.query);
-     if (device) {
-       res.writeHead(200, {'Content-Type': 'application/json;utf-8', 'x-action':'status'});
-       res.end( JSON.stringify(device));
-     } else {
-       res.writeHead(400, {'Content-Type': 'application/json;utf-8'});
-       res.end( '{"error":"Missing id or name parameter"}');
-     }
+  app.get('/status', async (req, res) => {  
+	var funciono = true;
+	res.writeHead(200, {'Content-Type': 'application/json;utf-8', 'x-action':'status'});
+	console.log(req.query.id);
+		while (funciono) {
+			try {	 
+				var status = await connection.getDevicePowerState(req.query.id);
+				status['deviceid'] = req.query.id;
+				res.end( JSON.stringify(status));
+				console.log("STATUS" + JSON.stringify(status));
+				var funciono = false;
+			} catch (error) {
+				console.log(error)
+			}			
+		}
+
   });
 
   app.get('/powerusage', async (req, res) => {
@@ -131,8 +147,68 @@ const port = args['o'];
        res.writeHead(400, {'Content-Type': 'application/json;utf-8'});
        res.end( '{"error":"Missing id or name parameter"}');
      }
+  app.get('/toggle', async (req, res) => {
+	var funciono = true;
+	var device = findDevice(req.query);
+	if (device) {
+		res.writeHead(200, {'Content-Type': 'application/json;utf-8', 'x-action':'toggle'});
+		while (funciono) {
+			try {
+				const status = await connection.toggleDevice(device.deviceid);
+				res.end( JSON.stringify(status));
+				console.log("ON" + JSON.stringify(status));
+				var funciono = false;
+			} catch (error) {
+				console.log(error)
+			}
+		}
+	} else {
+		res.writeHead(400, {'Content-Type': 'application/json;utf-8'});
+		res.end( '{"error":"Missing id or name parameter"}');
+	}
   });
   
+  app.get('/on', async (req, res) => {
+	var funciono = true;
+	var device = findDevice(req.query);
+	if (device) {
+		res.writeHead(200, {'Content-Type': 'application/json;utf-8', 'x-action':'on'});
+		while (funciono) {
+			try {
+				const status = await connection.setDevicePowerState(device.deviceid, 'on');
+				res.end( JSON.stringify(status));
+				console.log("ON" + JSON.stringify(status));
+				var funciono = false;
+			} catch (error) {
+				console.log(error)
+			}
+		}
+	} else {
+		res.writeHead(400, {'Content-Type': 'application/json;utf-8'});
+		res.end( '{"error":"Missing id or name parameter"}');
+	}
+  });
+  
+  app.get('/off', async (req, res) => {
+	var funciono = true;
+	var device = findDevice(req.query);
+	if (device) {
+		res.writeHead(200, {'Content-Type': 'application/json;utf-8', 'x-action':'off'});
+		while (funciono) {
+			try {
+				const status = await connection.setDevicePowerState(device.deviceid, 'off');
+				res.end( JSON.stringify(status));
+				console.log("ON" + JSON.stringify(status));
+				var funciono = false;
+			} catch (error) {
+				console.log(error)
+			}
+		}
+	} else {
+		res.writeHead(400, {'Content-Type': 'application/json;utf-8'});
+		res.end( '{"error":"Missing id or name parameter"}');
+	}
+  }); 
   
   var server = app.listen(port, function () {
   	   var host = server.address().address

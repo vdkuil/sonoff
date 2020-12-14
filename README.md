@@ -1,9 +1,9 @@
 # Sonoff project for enabeling sonoff devices in Domoticz
-This project contains a server component and a domoticz plugin
+This project contains a server component and a domoticz plugin. This project has been made by vdkuil and has been improved by me.
 
 ## Server component
 Clone this project using git:
-git clone https://github.com/vdkuil/sonoff.git
+git clone https://github.com/zarebok/sonoff.git
 ### Installation
 Change tot the proper folder:
 cd sonoff/server

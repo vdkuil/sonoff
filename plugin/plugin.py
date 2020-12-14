@@ -10,27 +10,43 @@
     <params>
         <param field="Address" label="IP Address" width="200px" required="true" default="127.0.0.1"/>
         <param field="Port" label="Port" width="30px" required="true" default="8081"/>
+        <param field="Mode6" label="Debug" width="75px">
+            <options>
+                <option label="Verbose" value="Verbose"/>
+                <option label="True" value="Debug"/>
+                <option label="False" value="Normal" default="true" />
+            </options>
+        </param>		
     </params>
 </plugin>
 """
 import Domoticz
 import json
 
+runDevice = 1
+
 class BasePlugin:
     #enabled = False
     httpConn = None
     sendData = None
     runAgain = 6
+    
     disconnectCount = 0
     sProtocol = "HTTP"
 
 
     def __init__(self):
+
         #self.var = 123
         return
 
     def onStart(self):
-        Domoticz.Log("onStart called")
+        Domoticz.Debug("onStart called")
+        self.debugging = Parameters["Mode6"]
+        if self.debugging == "Verbose":
+            Domoticz.Debugging(2+4+8+16+64)
+        if self.debugging == "Debug":
+            Domoticz.Debugging(2)		
         if (Parameters["Port"] == "443"): self.sProtocol = "HTTPS"
         self.sendData = { 'Verb' : 'GET',
                      'URL'  : '/list',
@@ -44,11 +60,11 @@ class BasePlugin:
         self.httpConn.Connect()
 
     def onStop(self):
-        Domoticz.Log("onStop called")
+        Domoticz.Debug("onStop called")
         self.httpConn.Disconnect()
 
     def onConnect(self, Connection, Status, Description):
-        Domoticz.Log("onConnect called ")
+        Domoticz.Debug("onConnect called ")
         if (Status == 0):
             Domoticz.Debug("SonOff connected successfully.")
             if (self.sendData != None):
@@ -57,14 +73,17 @@ class BasePlugin:
             Domoticz.Log("Failed to connect ("+str(Status)+") to: "+Parameters["Address"]+":"+Parameters["Port"]+" with error: "+Description)
 
     def onMessage(self, Connection, Data):
-        Domoticz.Log("onMessage called")
+        Domoticz.Debug("onMessage called")
         strData = Data["Data"].decode("utf-8", "ignore")
+        Domoticz.Debug("Received data ("+strData+"), Devices: "+str(len(Devices)));        
+        #Domoticz.Debug("Received data from "+str(len(Devices))+" devices.");        
         json_data = json.loads(strData)
         json_headers = Data["Headers"]
         Status = int(Data["Status"])
         #LogMessage(strData)
-        #Domoticz.Log("Received data ("+strData+"), Name: " + json_data[0]['name'] + ", Devices: ("+str(len(Devices))+"), Connection: "+json_headers['x-action']);
-        Domoticz.Log("Received data ("+strData+"), Devices: ("+str(len(Devices))+"), Connection: "+json_headers['x-action']);
+        #Domoticz.Debug("Received data ("+strData+"), Name: " + json_data[0]['name'] + ", Devices: ("+str(len(Devices))+"), Connection: "+json_headers['x-action']);
+        #Domoticz.Debug("Received data ("+strData+"), Devices: ("+str(len(Devices))+"), Connection: "+json_headers['x-action']);
+        y=0
         if (json_headers['x-action'] == 'list'):
             for sonoff_device in json_data:
                 deviceId = sonoff_device['deviceid']
@@ -76,19 +95,37 @@ class BasePlugin:
                     if (type == "10"):
                         myDevice = Domoticz.Device(Name=sonoff_device['name'], Unit=unitNr, Type=244, Subtype=62, Switchtype=0, Image=0, Options={}, Used=1, DeviceID=sonoff_device['deviceid']).Create();
                 else:
-                    Domoticz.Log("Found existing device " + deviceId);
-
-                #    Domoticz.Log("Creating device (Name="+sonoff_device['name']+", TypeName=Light/Switch");
-                #    myDevice = Domoticz.Device(Name=sonoff_device['name'], Unit=1, Type=244, Subtype=62, Switchtype=0, Image=0, Options={}, Used=1, DeviceID=sonoff_device['deviceid']).Create();
+                    Domoticz.Debug("Found existing device " + deviceId);                 
+        elif (json_headers['x-action'] == 'on'):
+            Domoticz.Debug("Action found "+json_headers['x-action']);        
+        elif (json_headers['x-action'] == 'off'):
+            Domoticz.Debug("Action found "+json_headers['x-action']);  
+        elif (json_headers['x-action'] == 'status'):
+            Domoticz.Debug("Action found "+json_headers['x-action']);
+            if('error' in json_data):
+                Domoticz.Debug("Msg with error. Don't procesing.");
+            else:
+                deviceId = json_data['deviceid']  
+                state = json_data['state']      
+                for x in Devices: 
+                    if (Devices[x].DeviceID == deviceId):                  
+                        if(state=='on' and Devices[x].nValue==0):
+                            Devices[x].Update(nValue=1, sValue=Devices[x].sValue);
+                            Domoticz.Debug("Found existing device with ID:" + deviceId + " with different states. Updating to state:" + state);
+                        elif(state=='off' and Devices[x].nValue==1):
+                            Devices[x].Update(nValue=0, sValue=Devices[x].sValue);        
+                            Domoticz.Debug("Found existing device with ID:" + deviceId + " with different states. Updating to state:" + state);                                                 
+        elif (json_headers['x-action'] == 'toggle'):
+            Domoticz.Debug("Action found "+json_headers['x-action']);                    
         else:
             Domoticz.Log("Unsupported action found "+json_headers['x-action']);
 
         if (Status == 200):
             if ((self.disconnectCount & 1) == 1):
-                Domoticz.Log("Good Response received from server, Disconnecting.")
+                Domoticz.Debug("Good Response received from server, Disconnecting.")
                 self.httpConn.Disconnect()
             else:
-                Domoticz.Log("Good Response received from server, Dropping connection.")
+                Domoticz.Debug("Good Response received from server, Dropping connection.")
                 self.httpConn = None
             self.disconnectCount = self.disconnectCount + 1
         elif (Status == 302):
@@ -110,31 +147,74 @@ class BasePlugin:
             Domoticz.Error("Server returned a status: "+str(Status))
 
     def onCommand(self, Unit, Command, Level, Hue):
-        Domoticz.Log("onCommand called for Unit " + str(Unit) + ": Parameter '" + str(Command) + "', Level: " + str(Level) + "," + Devices[Unit].Name +","+Devices[Unit].DeviceID)
+        Domoticz.Debug("onCommand called for Unit " + str(Unit) + ": Parameter '" + str(Command) + "', Level: " + str(Level) + "," + Devices[Unit].Name +","+Devices[Unit].DeviceID)
         if (self.httpConn != None and (self.httpConn.Connecting() or self.httpConn.Connected())):
-            Domoticz.Log("onCommand connected");
+            Domoticz.Debug("onCommand connected");
         else:
             Domoticz.Log("onCommand NOT connected");
-            self.sendData = { 'Verb' : 'GET',
-                         'URL'  : '/toggle?id=' + Devices[Unit].DeviceID,
-                         'Headers' : { 'Content-Type': 'application/json; charset=utf-8', \
-                                       'Connection': 'keep-alive', \
-                                       'Accept': 'Content-Type: application/json; charset=UTF-8', \
-                                       'Host': Parameters["Address"]+":"+Parameters["Port"], \
-                                       'User-Agent':'Domoticz/1.0' }
-                       }
+            if(str(Command) == 'On'):
+                self.sendData = { 'Verb' : 'GET',
+                    'URL'  : '/on?id=' + Devices[Unit].DeviceID,
+                    'Headers' : { 'Content-Type': 'application/json; charset=utf-8', \
+                        'Connection': 'keep-alive', \
+                        'Accept': 'Content-Type: application/json; charset=UTF-8', \
+                        'Host': Parameters["Address"]+":"+Parameters["Port"], \
+                        'User-Agent':'Domoticz/1.0' }
+                    }
+                Devices[Unit].Update(nValue=1, sValue=Devices[Unit].sValue);
+            elif(str(Command) == 'Off'):
+                self.sendData = { 'Verb' : 'GET',
+                    'URL'  : '/off?id=' + Devices[Unit].DeviceID,
+                    'Headers' : { 'Content-Type': 'application/json; charset=utf-8', \
+                        'Connection': 'keep-alive', \
+                        'Accept': 'Content-Type: application/json; charset=UTF-8', \
+                        'Host': Parameters["Address"]+":"+Parameters["Port"], \
+                        'User-Agent':'Domoticz/1.0' }
+                    }
+                Devices[Unit].Update(nValue=0, sValue=Devices[Unit].sValue);
+            else:
+                self.sendData = { 'Verb' : 'GET',
+                    'URL'  : '/toggle?id=' + Devices[Unit].DeviceID,
+                    'Headers' : { 'Content-Type': 'application/json; charset=utf-8', \
+                            'Connection': 'keep-alive', \
+                            'Accept': 'Content-Type: application/json; charset=UTF-8', \
+                            'Host': Parameters["Address"]+":"+Parameters["Port"], \
+                            'User-Agent':'Domoticz/1.0' }
+                    }
             self.httpConn = Domoticz.Connection(Name="SonOff EWELink connection", Transport="TCP/IP", Protocol=self.sProtocol, Address=Parameters["Address"], Port=Parameters["Port"])
             self.httpConn.Connect()
         #Connection.Send(sendData)
 
     def onNotification(self, Name, Subject, Text, Status, Priority, Sound, ImageFile):
-        Domoticz.Log("Notification: " + Name + "," + Subject + "," + Text + "," + Status + "," + str(Priority) + "," + Sound + "," + ImageFile)
+        Domoticz.Debug("Notification: " + Name + "," + Subject + "," + Text + "," + Status + "," + str(Priority) + "," + Sound + "," + ImageFile)
 
     def onDisconnect(self, Connection):
-        Domoticz.Log("onDisconnect called")
+        Domoticz.Debug("onDisconnect called")
+        
+    def onStatus(self, Unit):
+        global runDevice
+        if (self.httpConn != None and (self.httpConn.Connecting() or self.httpConn.Connected())):
+            Domoticz.Debug("onStatus connected");
+        else:        
+            Domoticz.Debug("onStatus called for Unit " + str(Unit) + " con ID " + Devices[Unit].DeviceID)
+            if(runDevice==Unit):
+                self.sendData = { 'Verb' : 'GET',
+                    'URL'  : '/status?id=' + Devices[Unit].DeviceID,
+                    'Headers' : { 'Content-Type': 'application/json; charset=utf-8', \
+                        'Connection': 'keep-alive', \
+                        'Accept': 'Content-Type: application/json; charset=UTF-8', \
+                        'Host': Parameters["Address"]+":"+Parameters["Port"], \
+                        'User-Agent':'Domoticz/1.0' }
+                    }
+                self.httpConn = Domoticz.Connection(Name="SonOff EWELink connection", Transport="TCP/IP", Protocol=self.sProtocol, Address=Parameters["Address"], Port=Parameters["Port"])
+                self.httpConn.Connect()
+            runDevice+=1
+            if (len(Devices) < runDevice):
+                runDevice = 1
 
     def onHeartbeat(self):
-        Domoticz.Log("onHeartbeat called")
+        global runDevice    
+        Domoticz.Debug("onHeartbeat called")
         if (self.httpConn != None and (self.httpConn.Connecting() or self.httpConn.Connected())):
             Domoticz.Debug("onHeartbeat called, Connection is alive.")
         else:
@@ -154,6 +234,7 @@ class BasePlugin:
                 self.runAgain = 6
             else:
                 Domoticz.Debug("onHeartbeat called, run again in "+str(self.runAgain)+" heartbeats.")
+        onStatus(runDevice)          
         #Domoticz.Trace(False)
 
 global _plugin
@@ -178,6 +259,10 @@ def onMessage(Connection, Data):
 def onCommand(Unit, Command, Level, Hue):
     global _plugin
     _plugin.onCommand(Unit, Command, Level, Hue)
+    
+def onStatus(Unit):
+    global _plugin
+    _plugin.onStatus(Unit)    
 
 def onNotification(Name, Subject, Text, Status, Priority, Sound, ImageFile):
     global _plugin
