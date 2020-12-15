@@ -123,7 +123,8 @@ class BasePlugin:
         if (Status == 200):
             if ((self.disconnectCount & 1) == 1):
                 Domoticz.Debug("Good Response received from server, Disconnecting.")
-                self.httpConn.Disconnect()
+                if (self.httpConn != None):
+                    self.httpConn.Disconnect()
             else:
                 Domoticz.Debug("Good Response received from server, Dropping connection.")
                 self.httpConn = None
