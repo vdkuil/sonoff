@@ -14,9 +14,9 @@ npm install express
 npm install minimist
 ```
 ### Running
-node server.js -e `email` -p `password` -r us -o 8081
+node server.js -e `email` -p `password` -r us -o 8081 -i APPID -s APPSECRET
 The parameters -r and -o are optional
-
+The parameters -i and -s should both be specified or none
 
 ## Plugin component
 

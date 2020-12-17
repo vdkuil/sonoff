@@ -22,11 +22,18 @@ console.log('email', args['e']);
 console.log('region', args['r']);
 console.log('runing port', args['o']);
 
-const connection = new ewelink({
+var ewelinkOptions = {
       email: args['e'],
       password: args['p'],
       region: args['r']
-});
+};
+if (args['i']) { // app_id
+  ewelinkOptions['APP_ID'] = args['i'];
+}
+if (args['s']) { // app_secret
+  ewelinkOptions['APP_SECRET'] = args['s'];
+}
+const connection = new ewelink(ewelinkOptions);
 
 const port = args['o'];
 
